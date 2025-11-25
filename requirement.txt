@@ -1,0 +1,11 @@
+pytest
+pytest-xdist
+pytest-html
+Appium-Python-Client
+selenium
+python-dotenv
+requests
+pydantic
+Faker
+loguru
+
