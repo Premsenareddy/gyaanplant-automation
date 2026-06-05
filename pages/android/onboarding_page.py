@@ -26,11 +26,6 @@ class OnboardingPage(BasePage):
         # Now Login button should be visible
         self.tap_login()
 
-    # Helper: check if element exists without waiting 20 sec
-    def is_element_present(self, locator):
-        try:
-            self.driver.find_element(*locator)
-            return True
-        except:
-            return False
-
+    # Keep the historical page-level helper while using BasePage's timeout-aware wait.
+    def is_element_present(self, locator, timeout=3):
+        return super().is_element_present(locator, timeout=timeout)

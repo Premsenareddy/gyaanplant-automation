@@ -2,10 +2,9 @@ pytest
 pytest-xdist
 pytest-html
 Appium-Python-Client
-selenium
+playwright
 python-dotenv
 requests
 pydantic
 Faker
 loguru
-

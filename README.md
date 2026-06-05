@@ -12,7 +12,7 @@
 
 
 A complete Python Test Automation Framework designed for both Mobile (Android) and Web testing.
-This framework is built using PyTest, Appium, Selenium, Page Object Model (POM), Fixtures, and Allure reporting, making it production-ready and portfolio-worthy.
+This framework is built using PyTest, Appium, Playwright, Page Object Model (POM), Fixtures, and Allure reporting, making it production-ready and portfolio-worthy.
 
 📌 Key Features
 ✔ Mobile Automation (Appium)
@@ -25,7 +25,7 @@ Device capabilities from config
 
 Context switching, gestures, waits
 
-✔ Web Automation (Selenium)
+✔ Web Automation (Playwright)
 
 Structured web flows
 
@@ -125,7 +125,7 @@ Custom waits & utility library
 Category	Tools
 Language	Python 3.12
 Test Runner	PyTest
-Web Automation	Selenium
+Web Automation	Playwright
 Mobile Testing	Appium
 Reporting	Allure
 Parallel Exec	PyTest-xdist

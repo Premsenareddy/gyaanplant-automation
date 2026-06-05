@@ -1,12 +1,11 @@
 import time
 from appium.webdriver.common.appiumby import AppiumBy
-from selenium.webdriver.common.by import By
 
 
 def test_dump_locators(android_driver):
     time.sleep(2)  # allow screen to settle
 
-    elements = android_driver.find_elements(By.XPATH, "//*")
+    elements = android_driver.find_elements(AppiumBy.XPATH, "//*")
 
     print("\n================= LOCATOR DUMP =================\n")
 
@@ -35,4 +34,3 @@ def test_dump_locators(android_driver):
         print(item)
 
     print("\n=================================================\n")
-

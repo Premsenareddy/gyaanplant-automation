@@ -31,6 +31,9 @@ class BasePage:
         self.log.info(f"[PAGE] Waiting for visible: {locator}")
         return wait_visible(self.driver, locator, timeout)
 
+    def wait_for_visibility(self, locator, timeout=DEFAULT_TIMEOUT):
+        return self.visible(locator, timeout)
+
     def clickable(self, locator, timeout=DEFAULT_TIMEOUT):
         self.log.info(f"[PAGE] Waiting for clickable: {locator}")
         return wait_clickable(self.driver, locator, timeout)
@@ -85,6 +88,9 @@ class BasePage:
         self.log.info(f"[PAGE] Click: {locator}")
         return wait_and_click(self.driver, locator, timeout)
 
+    def wait_and_click(self, locator, timeout=DEFAULT_TIMEOUT):
+        return self.click(locator, timeout)
+
     def tap(self, locator):
         self.log.info(f"[PAGE] Tap (WaitUtils): {locator}")
         element = self.wait.wait_for_element(locator)
@@ -94,6 +100,9 @@ class BasePage:
     def type(self, locator, text, timeout=DEFAULT_TIMEOUT):
         self.log.info(f"[PAGE] Type '{text}' into {locator}")
         return wait_and_send_keys(self.driver, locator, text, timeout)
+
+    def wait_and_send_keys(self, locator, text, timeout=DEFAULT_TIMEOUT):
+        return self.type(locator, text, timeout)
 
     def send_keys(self, locator, text):
         self.log.info(f"[PAGE] send_keys (WaitUtils): '{text}' into {locator}")
@@ -109,6 +118,32 @@ class BasePage:
         self.log.info(f"[PAGE] Tap text: {text}")
         return wait_text(self.driver, text, timeout)
 
+    def tap_by_text(self, text, timeout=DEFAULT_TIMEOUT):
+        locator = (
+            AppiumBy.ANDROID_UIAUTOMATOR,
+            f'new UiSelector().textContains("{text}")'
+        )
+        return self.click(locator, timeout)
+
+    def text_locator(self, text):
+        return (
+            AppiumBy.ANDROID_UIAUTOMATOR,
+            f'new UiSelector().textContains("{text}")'
+        )
+
+    def is_element_present(self, locator, timeout=3):
+        try:
+            self.present(locator, timeout)
+            return True
+        except Exception:
+            return False
+
+    def is_any_text_visible(self, texts, timeout=5):
+        return any(self.is_text_visible(text, timeout=timeout) for text in texts)
+
+    def back(self):
+        self.driver.back()
+
     # ---------------------------
     # Scrolling
     # ---------------------------
@@ -116,4 +151,3 @@ class BasePage:
     def scroll_to(self, locator):
         self.log.info(f"[PAGE] Scroll until visible: {locator}")
         return scroll_until_visible(self.driver, locator)
-

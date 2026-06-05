@@ -5,6 +5,10 @@ from appium.webdriver.common.appiumby import AppiumBy
 from pages.android.base_page import BasePage
 
 
+class MobileAuthenticationBlocked(Exception):
+    """Raised when the APK needs auth data the automation run cannot provide."""
+
+
 class LoginPage(BasePage):
 
     # ----------------------------
@@ -24,6 +28,26 @@ class LoginPage(BasePage):
         "//android.view.View[@content-desc='Enter Password']/following-sibling::android.widget.EditText"
     )
     PASSWORD_CONTINUE_BTN = (AppiumBy.ACCESSIBILITY_ID, "Continue")
+    OTP_TITLE = (
+        AppiumBy.ANDROID_UIAUTOMATOR,
+        'new UiSelector().descriptionContains("Enter OTP")'
+    )
+    OTP_FIELDS = (AppiumBy.XPATH, "//android.widget.EditText")
+    OTP_CONTINUE_BTN = (AppiumBy.ACCESSIBILITY_ID, "Continue")
+
+    def _tap_control(self, locator, timeout=10):
+        element = self.click(locator, timeout=timeout)
+        time.sleep(0.5)
+        return element
+
+    def _tap_control_center(self, locator, timeout=10):
+        element = self.get_element(locator)
+        rect = element.rect
+        center_x = rect["x"] + rect["width"] // 2
+        center_y = rect["y"] + rect["height"] // 2
+        self.log.info("[LOGIN] Center tap fallback at (%s, %s)", center_x, center_y)
+        self.driver.tap([(center_x, center_y)])
+        time.sleep(0.5)
 
     # ----------------------------
     # Email Screen
@@ -36,6 +60,7 @@ class LoginPage(BasePage):
         self.log.info("[LOGIN] Tapping email field")
         field = self.get_element(self.EMAIL_FIELD)
         field.click()
+        field.clear()
 
         self.log.info("[LOGIN] Typing email: %s", email)
         field.send_keys(email)
@@ -47,15 +72,28 @@ class LoginPage(BasePage):
         self.hide_keyboard()
         time.sleep(0.3)
 
-        self.click(self.EMAIL_SUBMIT_BTN)
+        self._tap_control(self.EMAIL_SUBMIT_BTN)
+
+        if not self.is_password_screen_displayed(timeout=3):
+            if self.is_otp_screen_displayed(timeout=3):
+                return
+            self.log.info("[LOGIN] Password screen not visible yet; retrying Submit with center tap")
+            self._tap_control_center(self.EMAIL_SUBMIT_BTN)
 
     # ----------------------------
     # Password Screen
     # ----------------------------
 
-    def is_password_screen_displayed(self):
+    def is_password_screen_displayed(self, timeout=12):
         try:
-            self.visible(self.PASSWORD_FIELD, timeout=5)
+            self.visible(self.PASSWORD_FIELD, timeout=timeout)
+            return True
+        except:
+            return False
+
+    def is_otp_screen_displayed(self, timeout=5):
+        try:
+            self.visible(self.OTP_TITLE, timeout=timeout)
             return True
         except:
             return False
@@ -64,6 +102,7 @@ class LoginPage(BasePage):
         self.log.info("[LOGIN] Tapping password field")
         field = self.get_element(self.PASSWORD_FIELD)
         field.click()
+        field.clear()
 
         self.log.info("[LOGIN] Typing password: %s", password)
         field.send_keys(password)
@@ -71,22 +110,56 @@ class LoginPage(BasePage):
     def submit_password(self):
         self.hide_keyboard()
         time.sleep(0.3)
-        self.click(self.PASSWORD_CONTINUE_BTN)
+        self._tap_control(self.PASSWORD_CONTINUE_BTN)
+
+        if self.is_password_screen_displayed(timeout=3):
+            self.log.info("[LOGIN] Password screen still visible; retrying Continue with center tap")
+            self._tap_control_center(self.PASSWORD_CONTINUE_BTN)
+
+    # ----------------------------
+    # OTP Screen
+    # ----------------------------
+
+    def enter_otp(self, otp: str):
+        fields = self.driver.find_elements(*self.OTP_FIELDS)
+        if len(fields) < len(otp):
+            raise MobileAuthenticationBlocked(
+                f"OTP screen displayed, but only {len(fields)} OTP fields were found"
+            )
+
+        for index, digit in enumerate(otp):
+            fields[index].click()
+            fields[index].send_keys(digit)
+
+    def submit_otp(self):
+        self.hide_keyboard()
+        time.sleep(0.3)
+        self._tap_control(self.OTP_CONTINUE_BTN)
 
     # ----------------------------
     # High-level test flow
     # ----------------------------
 
-    def login(self, email: str, password: str):
+    def login(self, email: str, password: str, otp: str | None = None):
         # Email
         self.enter_email(email)
         self.submit_email()
 
-        # Password
         if self.is_password_screen_displayed():
             self.enter_password(password)
             self.submit_password()
-        else:
-            self.log.error("[LOGIN] Password screen not displayed!")
-            raise Exception("Password screen did not appear")
+            return
 
+        if self.is_otp_screen_displayed():
+            if not otp:
+                raise MobileAuthenticationBlocked(
+                    "Mobile app displayed an OTP screen. Set ANDROID_LMS_OTP for this run."
+                )
+            self.enter_otp(otp)
+            self.submit_otp()
+            return
+
+        self.log.error("[LOGIN] Neither password nor OTP screen displayed after email submit")
+        raise MobileAuthenticationBlocked(
+            "Mobile app did not show a supported auth screen after email submit."
+        )
