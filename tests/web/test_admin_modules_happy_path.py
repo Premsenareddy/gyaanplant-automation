@@ -76,7 +76,7 @@ def test_gp_mod_003_courses_page_displays_existing_course_card(admin_modules):
             "Rust",
             "Rust programming",
             "VIEW CONTENT",
-            "Showing 1 of 1 courses",
+            "Showing 3 of 3 courses",
         ],
     )
 
@@ -105,7 +105,8 @@ def test_gp_mod_005_career_paths_page_displays_live_path_card(admin_modules):
             "#aws",
             "#mongodb",
             "#expressjs",
-            "Showing 1 of 1 paths",
+            "GENAI DEVELOPER",
+            "Showing 2 of 2 paths",
         ],
     )
 
@@ -200,7 +201,7 @@ def test_gp_mod_010_payments_page_displays_transaction_audit(admin_modules):
             "APPLY",
             "Filters",
             "STUDENT PURCHASES",
-            "SHOWING 10 OF 10 RECORDS",
+            "SHOWING 15 OF 18 RECORDS",
             "LIVE SYNC ACTIVE",
             "USER",
             "PRODUCT",
@@ -227,10 +228,11 @@ def test_gp_mod_012_notifications_page_displays_empty_state(admin_modules):
         [
             "Notifications",
             "0 new alerts require your attention",
+            "BROADCAST",
             "MARK ALL READ",
-            "STAY TUNED",
-            "All notifications have been cleared.",
-            "Showing 0 of 0 notifications",
+            "Your streak broke!",
+            "Level Up!",
+            "Showing 2 of 2 notifications",
         ],
     )
 

@@ -32,9 +32,9 @@ class OrganizationsPage(DashboardPage):
         "PASSWORD *",
         "PHONE",
         "WEBSITE",
+        "COUNTRY *",
+        "STATE/PROVINCE",
         "CITY *",
-        "STATE",
-        "FULL HEADQUARTERS ADDRESS",
         "MOU STATUS *",
         "SUBSCRIPTION *",
     ]
@@ -92,7 +92,6 @@ class OrganizationsPage(DashboardPage):
         assert self.visible("input[placeholder='Enter organization name']").is_visible()
         assert self.visible("input[placeholder='••••••••']").is_visible()
         assert self.visible("input[placeholder='https://...']").is_visible()
-        assert self.visible("input[placeholder='Complete street address and office number']").is_visible()
         assert self.page.get_by_text("Establish Partnership", exact=True).is_visible()
         self.click(self.CANCEL_BUTTON)
 

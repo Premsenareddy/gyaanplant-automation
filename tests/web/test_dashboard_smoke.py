@@ -3,6 +3,7 @@ import os
 import pytest
 
 from pages.web.dashboard_page import DashboardPage
+from pages.web.launch_page import LaunchPage
 
 
 @pytest.mark.web
@@ -13,14 +14,16 @@ def test_dashboard_route_requires_authentication(web_page):
 
     assert dashboard.has_rendered_app_shell()
     assert "GyaanPlant" in web_page.title()
-    assert dashboard.is_on_login_route() or dashboard.has_login_form()
+    assert LaunchPage(web_page).wait_for_role_cards()
 
 
 @pytest.mark.web
 def test_login_page_is_ready_for_credentials(web_page):
     dashboard = DashboardPage(web_page)
+    launch = LaunchPage(web_page)
 
     dashboard.load()
+    launch.select_role("ADMIN")
 
     assert dashboard.has_login_form()
 

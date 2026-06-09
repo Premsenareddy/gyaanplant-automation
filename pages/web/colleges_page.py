@@ -29,8 +29,8 @@ class CollegesPage(DashboardPage):
     }
     ADD_COLLEGE_FORM_LABELS = [
         "COLLEGE NAME *",
-        "CITY *",
-        "STATE",
+        "COUNTRY *",
+        "STATE *",
         "TYPE",
         "NAAC GRADE *",
         "TOTAL STUDENTS *",
@@ -39,7 +39,7 @@ class CollegesPage(DashboardPage):
         "PASSWORD *",
         "PHONE",
         "WEBSITE URL",
-        "FULL ADDRESS",
+        "CITY *",
         "SUBSCRIPTION *",
         "MOU STATUS *",
     ]
@@ -119,7 +119,6 @@ class CollegesPage(DashboardPage):
         assert self.visible("input[placeholder='Institutional Name']").is_visible()
         assert self.visible("input[placeholder='••••••••']").is_visible()
         assert self.visible("input[placeholder='https://...']").is_visible()
-        assert self.visible("input[placeholder='Detailed physical address']").is_visible()
         assert self.page.locator("select").count() >= 4
         assert self.page.get_by_text("Deploy Institution", exact=True).is_visible()
 

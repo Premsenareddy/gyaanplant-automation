@@ -1,6 +1,9 @@
 import sys
 import os
 import pytest
+from dotenv import load_dotenv
+
+load_dotenv()
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 if PROJECT_ROOT not in sys.path:
