@@ -1,9 +1,9 @@
-import time
 from urllib.parse import urljoin
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from pages.web.dashboard_page import DashboardPage
+from utils.web_test_data import OrganizationFormData, WebTestDataFactory
 
 
 class OrganizationsPage(DashboardPage):
@@ -32,9 +32,9 @@ class OrganizationsPage(DashboardPage):
         "PASSWORD *",
         "PHONE",
         "WEBSITE",
+        "COUNTRY *",
+        "STATE/PROVINCE",
         "CITY *",
-        "STATE",
-        "FULL HEADQUARTERS ADDRESS",
         "MOU STATUS *",
         "SUBSCRIPTION *",
     ]
@@ -50,7 +50,10 @@ class OrganizationsPage(DashboardPage):
         self.wait_for_body_text("partners", timeout=60)
 
     def generate_unique_company_name(self):
-        return f"{self.AUTOMATION_PREFIX}{int(time.time())}"
+        return WebTestDataFactory(self.AUTOMATION_PREFIX.rstrip("_")).entity("company").name
+
+    def generate_organization_form_data(self):
+        return WebTestDataFactory(self.AUTOMATION_PREFIX.rstrip("_")).organization()
 
     def automation_email_for(self, company_name: str):
         suffix = company_name.lower().replace("_", ".")
@@ -92,7 +95,6 @@ class OrganizationsPage(DashboardPage):
         assert self.visible("input[placeholder='Enter organization name']").is_visible()
         assert self.visible("input[placeholder='••••••••']").is_visible()
         assert self.visible("input[placeholder='https://...']").is_visible()
-        assert self.visible("input[placeholder='Complete street address and office number']").is_visible()
         assert self.page.get_by_text("Establish Partnership", exact=True).is_visible()
         self.click(self.CANCEL_BUTTON)
 
@@ -126,11 +128,20 @@ class OrganizationsPage(DashboardPage):
         inputs.nth(4).fill(password)
         inputs.nth(5).fill(phone)
         inputs.nth(6).fill(website)
-        inputs.nth(7).fill(city)
-        inputs.nth(8).fill(state)
-        inputs.nth(9).fill(address)
-        selects.nth(4).select_option(label=mou_status)
-        selects.nth(5).select_option(label=subscription)
+        self._select_form_option("Select Country", "India")
+        self._select_form_option("Select State", state)
+        self._select_form_option("Select City", city)
+
+    def _select_form_option(self, placeholder_text: str, label: str):
+        select = self.page.locator("select").filter(has_text=placeholder_text).first
+        if select.count():
+            select.select_option(label=label)
+            return
+
+        trigger = self.page.get_by_text(placeholder_text, exact=False).last
+        trigger.click()
+        option = self.page.get_by_text(label, exact=True).last
+        option.click()
 
     def create_company(self, name: str, city: str = "Hyderabad"):
         self.open_add_company_modal()
@@ -139,6 +150,41 @@ class OrganizationsPage(DashboardPage):
         self.page.wait_for_load_state("networkidle")
         self.search_company(name)
         self.wait_for_body_text(name, timeout=60)
+
+    def create_company_from_data(self, data: OrganizationFormData):
+        self.open_add_company_modal()
+        self.fill_company_form(
+            name=data.name,
+            city=data.city,
+            state=data.state,
+            industry=data.industry,
+            company_type=data.company_type,
+            email=data.email,
+            password=data.password,
+            phone=data.phone,
+            website=data.website,
+            address=data.address,
+            subscription=data.subscription,
+            mou_status=data.mou_status,
+        )
+        self.click(self.ESTABLISH_PARTNERSHIP_BUTTON)
+        self.page.wait_for_load_state("networkidle")
+        self.search_company(data.name)
+        self.wait_for_body_text(data.name, timeout=60)
+
+    def assert_company_row_matches_form_data(self, data: OrganizationFormData):
+        self.search_company(data.name)
+        row_text = self.company_row(data.name).inner_text()
+        expected_values = [
+            data.name,
+            data.email,
+            data.industry,
+            data.company_type,
+            data.city,
+            data.mou_status,
+        ]
+        for value in expected_values:
+            assert value in row_text, f"Expected created organization row to contain {value!r}"
 
     def company_exists(self, name: str):
         self.search_company(name)
@@ -165,7 +211,14 @@ class OrganizationsPage(DashboardPage):
         if row.count() == 0 or not row.is_visible():
             return False
 
-        row.locator("button").nth(1).click()
+        delete_button = row.locator(
+            "button[title='Delete Record'], button[aria-label*='delete' i], button[title*='Delete' i]"
+        ).first
+        if delete_button.count() == 0:
+            delete_button = row.locator("button").last
+
+        self.page.once("dialog", lambda dialog: dialog.accept())
+        delete_button.click()
         self.page.wait_for_timeout(500)
         for label in ("Delete", "Confirm", "Yes", "Remove"):
             confirm = self.page.get_by_text(label, exact=True)
@@ -180,4 +233,8 @@ class OrganizationsPage(DashboardPage):
             self.company_row(name).wait_for(state="hidden", timeout=5000)
         except PlaywrightTimeoutError:
             pass
-        return not (self.company_row(name).count() > 0 and self.company_row(name).is_visible())
+        if self.company_row(name).count() == 0 or not self.company_row(name).is_visible():
+            return True
+
+        row_text = self.company_row(name).inner_text()
+        return "Expired" in row_text

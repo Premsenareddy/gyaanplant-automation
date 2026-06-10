@@ -1,155 +1,99 @@
-⭐ GyaanPlant Mobile & Web Test Automation Framework
+# GyaanPlant Web Test Automation Framework
 
+A Python web automation framework for the GyaanPlant LMS admin application.
 
+The framework uses Pytest, Playwright, Page Object Model design, reusable fixtures, and HTML reporting for smoke and regression coverage.
 
+## Key Features
 
+- Web automation with Playwright
+- Pytest-based test execution
+- Page Object Model structure under `pages/web`
+- Environment-driven configuration
+- Screenshot capture on failure
+- Playwright trace retention on failure
+- Self-contained HTML report generation
+- Marker-based suite selection for smoke, regression, CRUD, and RBAC tests
 
+## Project Structure
 
-
-
-
-
-
-
-A complete Python Test Automation Framework designed for both Mobile (Android) and Web testing.
-This framework is built using PyTest, Appium, Playwright, Page Object Model (POM), Fixtures, and Allure reporting, making it production-ready and portfolio-worthy.
-
-📌 Key Features
-✔ Mobile Automation (Appium)
-
-Android application testing
-
-POM-based page layers
-
-Device capabilities from config
-
-Context switching, gestures, waits
-
-✔ Web Automation (Playwright)
-
-Structured web flows
-
-Dynamic waits & reusable actions
-
-✔ Robust Framework Architecture
-
-Page Object Model (POM)
-
-Fixtures-driven test execution
-
-Utilities for logs, waits, test data
-
-Automatic screenshot capture
-
-✔ Reporting
-
-Allure Reports
-
-HTML + XML JUnit output
-
-Screenshots on failure
-
-✔ CI/CD Ready
-
-Can easily plug into GitHub Actions or Jenkins
-
-Supports headless mode
-
-📁 Project Structure
+```text
 gyaanplant_automation
-│
-├── app/                 # Appium driver, app utilities
-├── config/              # Environment & capability configs
-├── core/                # Base classes, driver factory, hooks
-├── locators/            # Page-specific locators
-├── pages/               # Page Object Model (POM) pages
-├── tests/               # UI/Mobile test cases
-├── testdata/            # Test input files (JSON, CSV, etc.)
-├── utils/               # Helpers: waits, logger, data utils
-│
-├── reports/             # Test execution reports
-├── screenshots/         # Screenshots (clean or optional)
-│
-├── conftest.py          # PyTest fixtures
-├── pytest.ini           # PyTest settings
-├── requirement.txt      # Dependencies
-├── Makefile             # Quick run commands
-└── README.md
+├── config/              # Environment and web runtime settings
+├── core/                # Playwright driver factory
+├── docs/                # Architecture and implementation notes
+├── pages/web/           # Web page objects
+├── reports/             # Generated test reports and artifacts
+├── testdata/            # Test input data
+├── tests/web/           # Web test cases
+├── utils/               # Shared helpers
+├── conftest.py          # Pytest fixtures and failure artifacts
+├── pytest.ini           # Pytest configuration
+├── requirement.txt      # Python dependencies
+└── Makefile             # Quick run commands
+```
 
-🚀 How to Run Tests
-1️⃣ Install dependencies
+## Install
+
+```bash
 pip install -r requirement.txt
+playwright install chromium
+```
 
-2️⃣ Run all tests
-pytest -v
+## Run Tests
 
-3️⃣ Run tests in parallel
-pytest -n auto
+Run all tests:
 
+```bash
+pytest
+```
 
-(if pytest-xdist installed)
+Run all web tests:
 
-4️⃣ Generate Allure report
-pytest --alluredir=reports/allure
-allure serve reports/allure
+```bash
+pytest -m web
+```
 
-📱 Mobile Test Execution (Appium)
+Run smoke tests:
 
-Ensure Appium server is running:
+```bash
+pytest -m "web and smoke"
+```
 
-appium
+Run regression tests:
 
+```bash
+pytest -m "web and regression"
+```
 
-Then run:
+## Reports
 
-pytest -m mobile -v
+Pytest writes the HTML report to:
 
+```text
+reports/web/pytest_report.html
+```
 
-Device capabilities are configured in:
+Failed web tests save:
 
-config/appium_config.json
+- screenshots under `reports/web/screenshots`
+- Playwright traces under `reports/web/traces`
 
-🧪 Test Design Standards
+## Useful Environment Variables
 
-POM Architecture
+```bash
+LMS_BASE_URL=https://lms.gyaanplant.co.in
+LMS_EMAIL=<admin email>
+LMS_PASSWORD=<admin password>
+WEB_HEADLESS=true
+WEB_TRACE_MODE=retain-on-failure
+WEB_TEST_ID_ATTRIBUTE=data-testid
+```
 
-Fixtures (session, module, function-level)
+## Test Design Standards
 
-Reusable driver factory
-
-Data-driven tests
-
-Custom waits & utility library
-
-🛠 Tech Stack Summary
-Category	Tools
-Language	Python 3.12
-Test Runner	PyTest
-Web Automation	Playwright
-Mobile Testing	Appium
-Reporting	Allure
-Parallel Exec	PyTest-xdist
-Architecture	POM + Fixtures
-CI/CD Ready	GitHub Actions
-🤝 Purpose of This Framework
-
-This repo is a clean, professional demonstration of:
-
-Your mobile automation skills
-
-Python-based automation architecture
-
-POM design pattern
-
-CI/CD-friendly test structure
-
-Real-world framework capabilities
-
-
-📬 Contact
-
-Premsena Reddy Anumandla
-Senior QA Automation Engineer
-
-📌 GitHub: @Premsenareddy
-📌 LinkedIn: https://www.linkedin.com/in/premsena-anumandla-a802b4179/
+- Prefer stable `data-testid` selectors when the application exposes them.
+- Keep page actions in page objects.
+- Keep test assertions business-readable.
+- Avoid live-data pollution unless setup and cleanup are safe.
+- Use markers to separate smoke, regression, CRUD, and role-based access coverage.

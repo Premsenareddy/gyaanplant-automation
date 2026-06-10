@@ -7,6 +7,26 @@ class BaseWebPage:
     def __init__(self, page):
         self.page = page
 
+    def by_test_id(self, test_id: str):
+        return self.page.get_by_test_id(test_id)
+
+    def visible_by_test_id(self, test_id: str, timeout=DEFAULT_TIMEOUT):
+        element = self.by_test_id(test_id).first
+        element.wait_for(state="visible", timeout=timeout * 1000)
+        return element
+
+    def click_by_test_id(self, test_id: str, timeout=DEFAULT_TIMEOUT):
+        element = self.visible_by_test_id(test_id, timeout)
+        element.click()
+        return element
+
+    def type_by_test_id(self, test_id: str, text, timeout=DEFAULT_TIMEOUT, clear=True):
+        element = self.visible_by_test_id(test_id, timeout)
+        if clear:
+            element.fill("")
+        element.fill(text)
+        return element
+
     def open(self, url: str):
         try:
             self.page.goto(url, wait_until="domcontentloaded")

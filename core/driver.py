@@ -1,31 +1,7 @@
-from appium.options.android import UiAutomator2Options
-from appium.webdriver.webdriver import WebDriver
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-from config.settings import AndroidConfig, WebConfig
-
-
-def create_android_driver():
-    config = AndroidConfig()
-
-    options = UiAutomator2Options()
-    options.set_capability("platformName", config.platformName)
-    options.set_capability("appium:automationName", config.automationName)
-    options.set_capability("appium:deviceName", config.deviceName)
-    options.set_capability("appium:platformVersion", config.platformVersion)
-    options.set_capability("appium:app", config.app)
-    options.set_capability("appium:autoGrantPermissions", True)
-    options.set_capability("appium:appWaitActivity", config.appWaitActivity)
-    options.set_capability("appium:noReset", config.no_reset)
-    options.set_capability("appium:fullReset", config.full_reset)
-
-    driver = WebDriver(
-        command_executor=config.appium_server_url,
-        options=options
-    )
-
-    return driver
+from config.settings import WebConfig
 
 
 def create_web_page():
@@ -33,6 +9,7 @@ def create_web_page():
     playwright = sync_playwright().start()
 
     try:
+        playwright.selectors.set_test_id_attribute(config.test_id_attribute)
         browser_name = config.browser.lower()
         browser_type = getattr(playwright, browser_name, playwright.chromium)
 
@@ -43,8 +20,20 @@ def create_web_page():
             launch_options["executable_path"] = "/opt/homebrew/bin/chromium"
 
         browser = browser_type.launch(**launch_options)
-        context = browser.new_context(viewport={"width": 1440, "height": 1000})
+        context_options = {
+            "viewport": {
+                "width": config.viewport_width,
+                "height": config.viewport_height,
+            },
+        }
+        if config.record_video:
+            context_options["record_video_dir"] = str(
+                Path(config.artifacts_dir) / "videos"
+            )
+
+        context = browser.new_context(**context_options)
         context.set_default_timeout(config.timeout_ms)
+        context.set_default_navigation_timeout(config.timeout_ms)
         page = context.new_page()
 
         return playwright, browser, context, page

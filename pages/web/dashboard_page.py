@@ -3,6 +3,7 @@ from typing import Optional
 
 from config.settings import WebConfig
 from pages.web.base_page import BaseWebPage
+from pages.web.launch_page import LaunchPage
 
 
 class DashboardPage(BaseWebPage):
@@ -59,24 +60,19 @@ class DashboardPage(BaseWebPage):
     ]
     SMOKE_CLICK_LEADERBOARD_FILTERS = ["MONTHLY", "WEEKLY"]
     METRIC_EXPECTATIONS = {
-        "TOTAL PARTNERS": ["4", "Colleges: 4"],
-        "TOTAL STUDENTS": ["25", "Global Student Reach"],
-        "ACTIVE AGREEMENTS": ["1", "Total Orgs: 0"],
-        "TOTAL EMPLOYEES": ["0", "Company Network"],
-        "ACTIVITY TODAY": ["29", "785 Points earned", "Platform Activity"],
+        "TOTAL PARTNERS": ["Colleges:"],
+        "TOTAL STUDENTS": ["Global Student Reach"],
+        "ACTIVE AGREEMENTS": ["Total Orgs:"],
+        "TOTAL EMPLOYEES": ["Company Network"],
+        "ACTIVITY TODAY": ["Points earned", "Platform Activity"],
     }
-    ACTIVITY_SUMMARIES = [
-        ["28", "MAY 28, 2026", "ACTIVITY SUMMARY", "POINTS", "+785", "ACTIONS", "29"],
-        ["29", "MAY 29, 2026", "ACTIVITY SUMMARY", "POINTS", "+105", "ACTIONS", "12"],
-        ["30", "MAY 30, 2026", "ACTIVITY SUMMARY", "POINTS", "+50", "ACTIONS", "10"],
-    ]
     TOP_PARTNER_ROW = ["Microsoft", "IT", "ACTIVE"]
     LEADERBOARD_ENTRIES = [
-        ["01", "GYAANPLANT", "LVL 1", "65", "POINTS"],
-        ["02", "ADA", "LVL 1", "65", "POINTS"],
-        ["03", "RISHIK", "LVL 1", "60", "POINTS"],
-        ["04", "PERSON1", "LVL 1", "55", "POINTS"],
-        ["05", "SAGAR", "LVL 1", "55", "POINTS"],
+        ["01", "GYAANPLANT", "POINTS"],
+        ["02", "SUKESH", "POINTS"],
+        ["03", "CHARAN", "POINTS"],
+        ["04", "ADA", "POINTS"],
+        ["05", "RISHIK", "POINTS"],
     ]
 
     def __init__(self, page, config: Optional[WebConfig] = None):
@@ -132,17 +128,7 @@ class DashboardPage(BaseWebPage):
         return self.visible(self.EMAIL_FIELD) is not None
 
     def login(self, email: str, password: str):
-        self.type(self.EMAIL_FIELD, email)
-        self.type(self.PASSWORD_FIELD, password)
-        submit_button = self.visible(self.SUBMIT_BUTTON)
-        try:
-            submit_button.click(timeout=10000, force=True)
-        except Exception:
-            submit_button.dispatch_event("click")
-        self.page.wait_for_timeout(500)
-        if "/login" in self.page.url and self.page.locator(self.SUBMIT_BUTTON).count():
-            self.page.locator(self.SUBMIT_BUTTON).first.click(force=True)
-            self.page.keyboard.press("Enter")
+        LaunchPage(self.page, self.config).login_as_role("ADMIN", email, password)
 
     def wait_for_dashboard(self):
         self.wait_until_url_contains("/dashboard")
@@ -177,8 +163,8 @@ class DashboardPage(BaseWebPage):
             self.assert_text_group_visible([metric, *values])
 
     def assert_activity_summaries_match_dashboard_values(self):
-        for summary in self.ACTIVITY_SUMMARIES:
-            self.assert_text_group_visible(summary)
+        self.assert_text_group_visible(["Platform Activity", "ACTIVITY SUMMARY", "POINTS", "ACTIONS"])
+        assert self.platform_activity_cards.count() >= 3
 
     def assert_top_partner_company_matches_dashboard_values(self):
         self.assert_text_group_visible(

@@ -2,15 +2,14 @@
 test:
 	pytest
 
-# Smoke test (App launch)
+# Web smoke/regression tests
 smoke:
-	pytest tests/android/test_smoke_launch.py
+	pytest -m "web and smoke"
 
-# Login flow
-login:
-	pytest tests/android/test_login_flow.py
+# All web tests
+web:
+	pytest -m web
 
-# Profile + Resume flow
-profile:
-	pytest tests/android/test_profile_resume_flow.py
-
+# Full regression
+regression:
+	pytest -m "web and regression"
