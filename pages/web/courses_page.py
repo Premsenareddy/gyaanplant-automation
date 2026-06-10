@@ -1,7 +1,7 @@
-import time
 from urllib.parse import urljoin
 
 from pages.web.dashboard_page import DashboardPage
+from utils.web_test_data import WebTestDataFactory
 
 
 class CoursesPage(DashboardPage):
@@ -44,7 +44,7 @@ class CoursesPage(DashboardPage):
         self.wait_for_body_text("Add Course", timeout=60)
 
     def generate_unique_course_title(self):
-        return f"{self.AUTOMATION_PREFIX}{int(time.time())}"
+        return WebTestDataFactory(self.AUTOMATION_PREFIX.rstrip("_")).entity("course").name
 
     def open_add_course_modal(self):
         self.click(self.ADD_COURSE_BUTTON)

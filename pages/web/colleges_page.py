@@ -1,9 +1,9 @@
-import time
 from urllib.parse import urljoin
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from pages.web.dashboard_page import DashboardPage
+from utils.web_test_data import CollegeFormData, WebTestDataFactory
 
 
 class CollegesPage(DashboardPage):
@@ -123,7 +123,10 @@ class CollegesPage(DashboardPage):
         assert self.page.get_by_text("Deploy Institution", exact=True).is_visible()
 
     def generate_unique_college_name(self):
-        return f"{self.AUTOMATION_PREFIX}{int(time.time())}"
+        return WebTestDataFactory(self.AUTOMATION_PREFIX.rstrip("_")).entity("college").name
+
+    def generate_college_form_data(self):
+        return WebTestDataFactory(self.AUTOMATION_PREFIX.rstrip("_")).college()
 
     def automation_email_for(self, college_name: str):
         suffix = college_name.lower().replace("_", ".")
@@ -147,23 +150,33 @@ class CollegesPage(DashboardPage):
         mou_status: str = "Active",
     ):
         inputs = self.page.locator("input")
-        selects = self.page.locator("select")
         email = email or self.automation_email_for(name)
 
         inputs.nth(2).fill(name)
-        inputs.nth(3).fill(city)
-        inputs.nth(4).fill(state)
-        selects.nth(1).select_option(label=college_type)
-        selects.nth(2).select_option(label=naac_grade)
-        inputs.nth(5).fill(total_students)
-        inputs.nth(6).fill(placement_percent)
-        inputs.nth(7).fill(email)
-        inputs.nth(8).fill(password)
-        inputs.nth(9).fill(phone)
-        inputs.nth(10).fill(website)
-        inputs.nth(11).fill(address)
-        selects.nth(3).select_option(label=subscription)
-        selects.nth(4).select_option(label=mou_status)
+        self._select_form_option("Select Country", "India")
+        self._select_form_option("Select State", state)
+        self._select_form_option("Select Type", college_type)
+        self._select_form_option("Select Grade", naac_grade)
+        inputs.nth(3).fill(total_students)
+        inputs.nth(4).fill(placement_percent)
+        inputs.nth(5).fill(email)
+        inputs.nth(6).fill(password)
+        inputs.nth(7).fill(phone)
+        inputs.nth(8).fill(website)
+        self._select_form_option("Select City", city)
+        self._select_form_option("Select Tier", subscription)
+        self._select_form_option("Select Status", mou_status)
+
+    def _select_form_option(self, placeholder_text: str, label: str):
+        select = self.page.locator("select").filter(has_text=placeholder_text).first
+        if select.count():
+            select.select_option(label=label)
+            return
+
+        trigger = self.page.get_by_text(placeholder_text, exact=False).last
+        trigger.click()
+        option = self.page.get_by_text(label, exact=True).last
+        option.click()
 
     def create_college(self, name: str, city: str = "Hyderabad"):
         self.open_add_college_modal()
@@ -172,6 +185,44 @@ class CollegesPage(DashboardPage):
         self.page.wait_for_load_state("networkidle")
         self.search_college(name)
         self.wait_for_body_text(name, timeout=60)
+
+    def create_college_from_data(self, data: CollegeFormData):
+        self.open_add_college_modal()
+        self.fill_college_form(
+            name=data.name,
+            city=data.city,
+            state=data.state,
+            college_type=data.college_type,
+            naac_grade=data.naac_grade,
+            total_students=data.total_students,
+            placement_percent=data.placement_percent,
+            email=data.email,
+            password=data.password,
+            phone=data.phone,
+            website=data.website,
+            address=data.address,
+            subscription=data.subscription,
+            mou_status=data.mou_status,
+        )
+        self.click(self.DEPLOY_INSTITUTION_BUTTON)
+        self.page.wait_for_load_state("networkidle")
+        self.search_college(data.name)
+        self.wait_for_body_text(data.name, timeout=60)
+
+    def assert_college_row_matches_form_data(self, data: CollegeFormData):
+        self.search_college(data.name)
+        row_text = self.college_row(data.name).inner_text()
+        expected_values = [
+            data.name,
+            data.email,
+            data.city,
+            data.total_students,
+            data.naac_grade,
+            data.placement_percent,
+            data.mou_status,
+        ]
+        for value in expected_values:
+            assert value in row_text, f"Expected created college row to contain {value!r}"
 
     def edit_college_city(self, name: str, new_city: str):
         self.search_college(name)

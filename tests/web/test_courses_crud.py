@@ -21,7 +21,6 @@ def courses_crud_context(web_page):
 
 
 @pytest.mark.web
-@pytest.mark.skip(reason="Courses UI exposes Add Course but no visible list-level delete/cleanup action; CRUD creation disabled to avoid live data pollution.")
 def test_gp_course_crud_001_create_read_update_delete_course(courses_crud_context):
     courses = courses_crud_context
     courses.open_add_course_modal()

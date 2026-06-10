@@ -1,7 +1,6 @@
 pytest
 pytest-xdist
 pytest-html
-Appium-Python-Client
 playwright
 python-dotenv
 requests

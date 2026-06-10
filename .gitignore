@@ -5,8 +5,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 screenshots/
-app/*.apk
 *.log
 reports/allure/
 reports/html/
 reports/junit/
+reports/web/
