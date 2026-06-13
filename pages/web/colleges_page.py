@@ -43,6 +43,17 @@ class CollegesPage(DashboardPage):
         "SUBSCRIPTION *",
         "MOU STATUS *",
     ]
+    FILTER_LABELS = ["All", "Active", "Pending", "Renewal", "Expired"]
+    TYPE_FILTER_LABELS = ["All Types", "Engineering", "Management", "Science"]
+    TABLE_HEADERS = [
+        "COLLEGE",
+        "LOCATION",
+        "STATUS",
+        "STUDENTS",
+        "NAAC",
+        "PLACEMENT",
+        "ACTIONS",
+    ]
 
     def open_colleges(self):
         item = self.sidebar_item("Colleges")
@@ -73,16 +84,39 @@ class CollegesPage(DashboardPage):
                 "Colleges",
                 "4 colleges",
                 "ADD COLLEGE",
-                "COLLEGE",
-                "LOCATION",
-                "STATUS",
-                "STUDENTS",
-                "NAAC",
-                "PLACEMENT",
-                "ACTIONS",
+                *self.TABLE_HEADERS,
             ]
         )
         assert self.table_rows().count() >= 4
+
+    def assert_filter_controls_ready(self):
+        self.assert_text_group_visible([*self.FILTER_LABELS, *self.TYPE_FILTER_LABELS])
+        assert self.visible(self.SEARCH_INPUT).is_visible()
+        assert self.visible(self.CITY_FILTER_INPUT).is_visible()
+        assert self.visible(self.SEARCH_BUTTON).is_visible()
+
+    def assert_table_structure_ready(self):
+        self.assert_text_group_visible(self.TABLE_HEADERS)
+        assert self.visible(self.COLLEGES_TABLE).is_visible()
+        assert self.table_rows().count() >= 1
+
+    def assert_row_actions_available(self, college_name: str):
+        row = self.college_row(college_name)
+        assert row.is_visible(), f"Expected college row to be visible: {college_name}"
+        assert row.locator("button").count() >= 1
+
+    def assert_search_result_contains(self, search_text: str, expected_values):
+        self.search_college(search_text)
+        row_text = self.college_row(search_text).inner_text()
+        for value in expected_values:
+            assert value in row_text, f"Expected search result to include {value!r}"
+
+    def assert_city_filter_results_include(self, city: str, expected_colleges):
+        self.filter_city(city)
+        body_text = self.body_text()
+        assert city in body_text
+        for college_name in expected_colleges:
+            assert college_name in body_text, f"Expected city filter to include {college_name}"
 
     def assert_expected_college_rows_visible(self):
         for college_name, expected_values in self.EXPECTED_COLLEGE_ROWS.items():
