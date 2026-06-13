@@ -23,9 +23,8 @@ def organizations_page(web_page):
 @pytest.mark.web
 def test_gp_org_001_organizations_page_loads_with_table_and_filters(organizations_page):
     organizations_page.assert_organizations_page_loaded()
-    organizations_page.visible_texts(["All", "Active", "Pending", "Renewal", "Expired"])
-    organizations_page.visible_texts(["All Industries", "IT", "Banking", "Manufacturing"])
-    organizations_page.visible_texts(["All Types", "MNC", "Startup", "SME", "Public Sector"])
+    organizations_page.assert_filter_controls_ready()
+    organizations_page.assert_table_structure_ready()
 
 
 @pytest.mark.web
@@ -35,14 +34,18 @@ def test_gp_org_002_organizations_table_displays_expected_partner(organizations_
 
 @pytest.mark.web
 def test_gp_org_003_search_finds_microsoft_partner(organizations_page):
-    organizations_page.search_company("Microsoft")
-
-    row_text = organizations_page.company_row("Microsoft").inner_text()
-    assert "Microsoft" in row_text
-    assert "microsoft@mailinator.com" in row_text
+    organizations_page.assert_search_result_contains(
+        "Microsoft",
+        ["Microsoft", "microsoft@mailinator.com", "IT", "MNC"],
+    )
 
 
 @pytest.mark.web
 def test_gp_org_004_add_company_modal_opens_with_required_fields(organizations_page):
     organizations_page.assert_add_company_form_ready()
     organizations_page.assert_organizations_page_loaded()
+
+
+@pytest.mark.web
+def test_gp_org_005_existing_organization_row_has_action_controls(organizations_page):
+    organizations_page.assert_row_actions_available("Microsoft")

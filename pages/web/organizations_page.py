@@ -38,6 +38,16 @@ class OrganizationsPage(DashboardPage):
         "MOU STATUS *",
         "SUBSCRIPTION *",
     ]
+    FILTER_LABELS = ["All", "Active", "Pending", "Renewal", "Expired"]
+    INDUSTRY_FILTER_LABELS = ["All Industries", "IT", "Banking", "Manufacturing"]
+    TYPE_FILTER_LABELS = ["All Types", "MNC", "Startup", "SME", "Public Sector"]
+    TABLE_HEADERS = [
+        "ORGANIZATION",
+        "INDUSTRY / TYPE",
+        "LOCATION",
+        "MOU STATUS",
+        "ACTIONS",
+    ]
 
     def navigate_to(self):
         self.open(urljoin(self.config.base_url, "/organizations/"))
@@ -74,14 +84,33 @@ class OrganizationsPage(DashboardPage):
                 "Organizations",
                 "partner companies",
                 "ADD COMPANY",
-                "ORGANIZATION",
-                "INDUSTRY / TYPE",
-                "LOCATION",
-                "MOU STATUS",
-                "ACTIONS",
+                *self.TABLE_HEADERS,
             ]
         )
         assert self.page.locator("table tbody tr").count() >= 1
+
+    def assert_filter_controls_ready(self):
+        self.assert_text_group_visible(
+            [*self.FILTER_LABELS, *self.INDUSTRY_FILTER_LABELS, *self.TYPE_FILTER_LABELS]
+        )
+        assert self.visible(self.SEARCH_INPUT).is_visible()
+        assert self.visible(self.SEARCH_BUTTON).is_visible()
+
+    def assert_table_structure_ready(self):
+        self.assert_text_group_visible(self.TABLE_HEADERS)
+        assert self.visible("table").is_visible()
+        assert self.page.locator("table tbody tr").count() >= 1
+
+    def assert_row_actions_available(self, company_name: str):
+        row = self.company_row(company_name)
+        assert row.is_visible(), f"Expected organization row to be visible: {company_name}"
+        assert row.locator("button").count() >= 1
+
+    def assert_search_result_contains(self, company_name: str, expected_values):
+        self.search_company(company_name)
+        row_text = self.company_row(company_name).inner_text()
+        for value in expected_values:
+            assert value in row_text, f"Expected search result to include {value!r}"
 
     def assert_expected_company_rows_visible(self):
         for company_name, expected_values in self.EXPECTED_COMPANY_ROW.items():

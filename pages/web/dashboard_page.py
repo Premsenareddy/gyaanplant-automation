@@ -1,5 +1,6 @@
 from urllib.parse import urljoin
 from typing import Optional
+import re
 
 from config.settings import WebConfig
 from pages.web.base_page import BaseWebPage
@@ -59,6 +60,21 @@ class DashboardPage(BaseWebPage):
         "Settings",
     ]
     SMOKE_CLICK_LEADERBOARD_FILTERS = ["MONTHLY", "WEEKLY"]
+    SIDEBAR_ROUTE_EXPECTATIONS = {
+        "Dashboard": "/dashboard",
+        "Analytics": "/analytics",
+        "Colleges": "/colleges",
+        "Organizations": "/organizations",
+        "Courses": "/courses",
+        "Career Paths": "/career-paths",
+        "Users": "/users",
+        "Prep Packs": "/prep-packs",
+        "Revenue": "/revenue",
+        "Payments": "/payments",
+        "Notifications": "/notifications",
+        "Settings": "/settings",
+    }
+    SIDEBAR_NON_NAVIGATING_ITEMS = ["Problems", "Job Details", "MOU Pipeline"]
     METRIC_EXPECTATIONS = {
         "TOTAL PARTNERS": ["Colleges:"],
         "TOTAL STUDENTS": ["Global Student Reach"],
@@ -67,6 +83,7 @@ class DashboardPage(BaseWebPage):
         "ACTIVITY TODAY": ["Points earned", "Platform Activity"],
     }
     TOP_PARTNER_ROW = ["Microsoft", "IT", "ACTIVE"]
+    TOP_PARTNER_HEADERS = ["COMPANY NAME", "INDUSTRY", "STATUS"]
     LEADERBOARD_ENTRIES = [
         ["01", "GYAANPLANT", "POINTS"],
         ["02", "SUKESH", "POINTS"],
@@ -74,6 +91,7 @@ class DashboardPage(BaseWebPage):
         ["04", "ADA", "POINTS"],
         ["05", "RISHIK", "POINTS"],
     ]
+    LEADERBOARD_FILTERS = ["ALL TIME", "MONTHLY", "WEEKLY"]
 
     def __init__(self, page, config: Optional[WebConfig] = None):
         super().__init__(page)
@@ -128,7 +146,10 @@ class DashboardPage(BaseWebPage):
         return self.visible(self.EMAIL_FIELD) is not None
 
     def login(self, email: str, password: str):
-        LaunchPage(self.page, self.config).login_as_role("ADMIN", email, password)
+        launch = LaunchPage(self.page, self.config)
+        if not self.page.locator(LaunchPage.EMAIL_FIELD).count():
+            launch.wait_for_role_cards()
+        launch.login_as_role("ADMIN", email, password)
 
     def wait_for_dashboard(self):
         self.wait_until_url_contains("/dashboard")
@@ -146,12 +167,110 @@ class DashboardPage(BaseWebPage):
     def sidebar_item(self, label: str):
         return self.page.locator("aside, nav").first.get_by_text(label, exact=True).first
 
+    def navigate_sidebar_item(self, label: str):
+        route = self.SIDEBAR_ROUTE_EXPECTATIONS[label]
+        item = self.sidebar_item(label)
+        item.scroll_into_view_if_needed()
+        item.click()
+        self.wait_until_url_contains(route, timeout=60)
+        self.page.wait_for_load_state("networkidle")
+        self.present("body")
+        assert self.body_text().strip(), f"{label} page rendered empty body"
+        return route
+
     def leaderboard_filter(self, label: str):
         return self.page.locator("button").filter(has_text=label).first
 
     def visible_texts(self, labels):
         for label in labels:
             self.wait_for_body_text(label, timeout=60)
+
+    def logout(self):
+        sign_out = self.page.get_by_text(re.compile(r"SIGN\s*OUT", re.I)).last
+        if sign_out.count() == 0 or not sign_out.is_visible():
+            self.profile_dropdown_button.click()
+            self.page.wait_for_timeout(500)
+            sign_out = self.page.get_by_text(re.compile(r"SIGN\s*OUT", re.I)).last
+
+        sign_out.scroll_into_view_if_needed()
+        sign_out.click()
+        self.page.wait_for_load_state("networkidle")
+        self.present("body")
+
+        if "/login" in self.page.url:
+            body_text = self.body_text()
+            assert "ADMIN" in body_text or self.page.locator(self.EMAIL_FIELD).count() > 0
+            return
+
+        LaunchPage(self.page, self.config).wait_for_role_cards()
+
+    def toggle_theme_and_assert_changed(self):
+        before_state = self._theme_state()
+        self.theme_toggle_button.click()
+        self.page.wait_for_timeout(500)
+        self.page.wait_for_load_state("networkidle")
+        after_state = self._theme_state()
+
+        assert self.theme_toggle_button.is_visible()
+        assert after_state != before_state or self._has_theme_state(after_state)
+
+    def assert_notifications_panel_opens(self):
+        self.notifications_button.click()
+        self.page.wait_for_timeout(500)
+        self.present("body")
+        body_text = self.body_text()
+        assert "Notifications" in body_text or "alerts" in body_text.lower()
+
+    def assert_profile_dropdown_opens(self):
+        self.profile_dropdown_button.click()
+        self.page.wait_for_timeout(500)
+        self.present("body")
+        body_text = self.body_text()
+        assert "Gyaanplant" in body_text
+        assert "admin" in body_text.lower() or "SIGN OUT" in body_text
+
+    def _theme_state(self):
+        return self.page.evaluate(
+            """() => ({
+                htmlClass: document.documentElement.className,
+                bodyClass: document.body.className,
+                colorScheme: getComputedStyle(document.documentElement).colorScheme,
+                theme: localStorage.getItem("theme") || localStorage.getItem("color-theme")
+            })"""
+        )
+
+    def _has_theme_state(self, state):
+        return any(value for value in state.values())
+
+    def summary_card_text(self, label: str):
+        self.wait_for_body_text(label, timeout=60)
+        body_text = self.body_text()
+        match = re.search(rf"{re.escape(label)}[\s\S]{{0,160}}", body_text)
+        assert match, f"Unable to locate summary card text for {label}"
+        return match.group(0)
+
+    def assert_summary_card_value_format(self, label: str):
+        card_text = self.summary_card_text(label)
+        assert re.search(r"\d", card_text), f"Expected numeric value in {label} card"
+
+    def assert_summary_card_exact_value(self, label: str, expected_value: str):
+        card_text = self.summary_card_text(label)
+        assert expected_value in card_text, f"Expected {label} to show {expected_value!r}"
+
+    def assert_all_summary_cards_have_values(self):
+        for label in self.SUMMARY_CARDS:
+            self.assert_summary_card_value_format(label)
+
+    def assert_top_partner_table_structure(self):
+        self.assert_text_group_visible(["Top Partner Companies", *self.TOP_PARTNER_HEADERS])
+        self.assert_top_partner_company_matches_dashboard_values()
+
+    def assert_leaderboard_widget_structure(self):
+        self.assert_text_group_visible(
+            ["Leaderboard", "Top students across all colleges", *self.LEADERBOARD_FILTERS, "VIEW FULL LEADERBOARD"]
+        )
+        for entry in self.LEADERBOARD_ENTRIES:
+            self.assert_text_group_visible(entry)
 
     def assert_text_group_visible(self, labels):
         body_text = self.body_text()

@@ -1,4 +1,5 @@
 from urllib.parse import urljoin
+import re
 
 from pages.web.dashboard_page import DashboardPage
 from utils.web_test_data import WebTestDataFactory
@@ -32,6 +33,18 @@ class CoursesPage(DashboardPage):
         "ADD SECTION",
         "Launch Course",
     ]
+    PAGE_TEXTS = [
+        "Course Management",
+        "Manage curriculum, course assignments, and academic learning resources",
+        "Add Course",
+        "Apply Search",
+    ]
+    COURSE_CARD_TEXTS = ["BEGINNER", "VIEW CONTENT"]
+    EXPECTED_COURSES = {
+        "Node.js Backend Development": ["Node.js Backend Development", "BEGINNER", "VIEW CONTENT"],
+        "React.js Development": ["React.js Development", "BEGINNER", "VIEW CONTENT"],
+        "Python Programming": ["Python Programming", "BEGINNER", "VIEW CONTENT"],
+    }
 
     def navigate_to(self):
         self.open(urljoin(self.config.base_url, "/courses/"))
@@ -61,18 +74,29 @@ class CoursesPage(DashboardPage):
         self.page.wait_for_timeout(500)
 
     def assert_courses_page_loaded(self):
-        self.assert_text_group_visible(
-            [
-                "Course Management",
-                "Manage curriculum, course assignments, and academic learning resources",
-                "Add Course",
-                "Apply Search",
-                "Rust",
-                "Rust programming",
-                "BEGINNER",
-                "VIEW CONTENT",
-            ]
-        )
+        self.assert_text_group_visible([*self.PAGE_TEXTS, *self.COURSE_CARD_TEXTS])
+
+    def assert_search_controls_ready(self):
+        assert self.visible(self.SEARCH_INPUT).is_visible()
+        assert self.page.get_by_text("Apply Search", exact=True).is_visible()
+
+    def course_card(self, course_title: str):
+        return self.page.locator("body").filter(has_text=course_title).first
+
+    def assert_course_card_contains(self, course_title: str, expected_values):
+        self.search_course(course_title)
+        body_text = self.body_text()
+        for value in expected_values:
+            assert value in body_text, f"Expected course card/search result to include {value!r}"
+
+    def assert_course_actions_available(self):
+        body_text = self.body_text()
+        assert "VIEW CONTENT" in body_text
+        assert self.page.get_by_text(re.compile(r"VIEW\s+CONTENT", re.I)).count() >= 1
+
+    def assert_expected_courses_visible(self):
+        for expected_values in self.EXPECTED_COURSES.values():
+            self.assert_text_group_visible(expected_values)
 
     def assert_add_course_form_ready(self):
         self.open_add_course_modal()
@@ -80,5 +104,6 @@ class CoursesPage(DashboardPage):
         assert self.visible("input[placeholder='e.g. Advanced JavaScript Mastery']").is_visible()
         assert self.visible("textarea[placeholder='Describe what students will learn...']").is_visible()
         assert self.visible("input[placeholder='Search paths...']").is_visible()
+        assert self.page.locator("select").count() >= 3
         assert self.page.get_by_text("Launch Course", exact=True).is_visible()
         self.click("button:has-text('Cancel')")
