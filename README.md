@@ -66,6 +66,18 @@ Run regression tests:
 pytest -m "web and regression"
 ```
 
+Run mocked resilience tests after dev confirms API route patterns:
+
+```bash
+WEB_MOCK_API_PATTERN="**/api/**" pytest -m "web and mocked"
+```
+
+Run guarded CRUD tests:
+
+```bash
+pytest -m "web and crud" --run-live-crud
+```
+
 ## Reports
 
 Pytest writes the HTML report to:
@@ -85,7 +97,8 @@ The workflow at `.github/workflows/web-automation.yml` runs web automation remot
 
 - Pull requests to `main`: runs smoke tests.
 - Pushes to `main`: runs smoke tests.
-- Manual `workflow_dispatch`: choose `smoke`, `regression`, `rbac`, or `crud`.
+- Nightly schedule: runs non-CRUD regression.
+- Manual `workflow_dispatch`: choose `smoke`, `regression`, `rbac`, `mocked`, `crud`, or `release-candidate`.
 
 Configure these GitHub repository secrets before expecting authenticated suites to run:
 
@@ -93,6 +106,8 @@ Configure these GitHub repository secrets before expecting authenticated suites 
 LMS_BASE_URL
 LMS_EMAIL
 LMS_PASSWORD
+LMS_API_BASE_URL
+LMS_API_TOKEN
 ```
 
 Optional RBAC secrets:
@@ -115,6 +130,13 @@ LMS_MENTOR_PASSWORD
 ```
 
 CI uploads the HTML report, screenshots, and Playwright traces as workflow artifacts.
+It also uploads a machine-readable `test_summary.json` and a human-readable `test_summary.md`.
+
+For dev-team requirements around RBAC users, API cleanup, selectors, and mocked API patterns, see:
+
+```text
+docs/dev_team_enterprise_test_contract.md
+```
 
 Run CRUD manually only after confirming live test data cleanup is acceptable:
 
@@ -131,6 +153,11 @@ LMS_PASSWORD=<admin password>
 WEB_HEADLESS=true
 WEB_TRACE_MODE=retain-on-failure
 WEB_TEST_ID_ATTRIBUTE=data-testid
+WEB_REUSE_AUTH_STATE=false
+WEB_AUTH_STATE_PATH=reports/web/auth/admin_state.json
+WEB_MOCK_API_PATTERN=**/api/**
+LMS_API_BASE_URL=<api url for automation cleanup>
+LMS_API_TOKEN=<api token for automation cleanup>
 ```
 
 ## Test Design Standards

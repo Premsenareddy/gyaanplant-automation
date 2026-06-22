@@ -1,20 +1,12 @@
-import os
-
 import pytest
 
 from pages.web.dashboard_page import DashboardPage
 
 
 @pytest.fixture
-def admin_dashboard(web_page):
-    email = os.getenv("LMS_EMAIL")
-    password = os.getenv("LMS_PASSWORD")
-    if not email or not password:
-        pytest.skip("Set LMS_EMAIL and LMS_PASSWORD to run admin dashboard tests.")
-
-    dashboard = DashboardPage(web_page)
+def admin_dashboard(authenticated_web_page):
+    dashboard = DashboardPage(authenticated_web_page)
     dashboard.load()
-    dashboard.login(email, password)
     dashboard.wait_for_dashboard()
     return dashboard
 

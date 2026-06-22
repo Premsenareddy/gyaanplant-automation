@@ -1,24 +1,21 @@
-import os
-
 import pytest
 
 from pages.web.organizations_page import OrganizationsPage
+from utils.web_api_client import WebApiClient
 
 
 @pytest.fixture
-def organizations_crud_context(web_page):
-    email = os.getenv("LMS_EMAIL")
-    password = os.getenv("LMS_PASSWORD")
-    if not email or not password:
-        pytest.skip("Set LMS_EMAIL and LMS_PASSWORD to run Organizations CRUD tests.")
-
-    organizations = OrganizationsPage(web_page)
+def organizations_crud_context(authenticated_web_page):
+    organizations = OrganizationsPage(authenticated_web_page)
     organizations.load()
-    organizations.login(email, password)
-    organizations.wait_until_url_contains("/dashboard", timeout=60)
+    organizations.wait_for_dashboard()
 
     created_companies = []
     yield organizations, created_companies
+
+    api_cleanup = WebApiClient().cleanup_by_prefix("organizations", prefix=OrganizationsPage.AUTOMATION_PREFIX)
+    if api_cleanup.enabled:
+        print(f"\n[API Cleanup] Organizations status={api_cleanup.status_code}")
 
     for company_name in list(created_companies):
         try:
@@ -35,6 +32,7 @@ def test_gp_org_crud_001_create_read_update_delete_company(organizations_crud_co
     created_companies.append(company_data.name)
 
     organizations.navigate_to()
+    WebApiClient().cleanup_by_prefix("organizations", prefix=OrganizationsPage.AUTOMATION_PREFIX)
     organizations.delete_company_if_present(company_data.name)
 
     organizations.create_company_from_data(company_data)

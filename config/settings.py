@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 class WebConfig(BaseModel):
     base_url: str = os.getenv("LMS_BASE_URL", "https://lms.gyaanplant.co.in")
+    api_base_url: str | None = os.getenv("LMS_API_BASE_URL")
+    api_token: str | None = os.getenv("LMS_API_TOKEN")
     dashboard_path: str = os.getenv("LMS_DASHBOARD_PATH", "/dashboard")
     browser: str = os.getenv("WEB_BROWSER", "chromium")
     browser_executable_path: str | None = os.getenv("WEB_BROWSER_EXECUTABLE_PATH")
@@ -16,3 +18,5 @@ class WebConfig(BaseModel):
     trace_mode: str = os.getenv("WEB_TRACE_MODE", "retain-on-failure")
     record_video: bool = os.getenv("WEB_RECORD_VIDEO", "false").lower() in ("1", "true", "yes")
     artifacts_dir: str = os.getenv("WEB_ARTIFACTS_DIR", "reports/web")
+    reuse_auth_state: bool = os.getenv("WEB_REUSE_AUTH_STATE", "false").lower() in ("1", "true", "yes")
+    auth_state_path: str = os.getenv("WEB_AUTH_STATE_PATH", "reports/web/auth/admin_state.json")

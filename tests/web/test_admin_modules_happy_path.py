@@ -1,22 +1,13 @@
-import os
-
 import pytest
 
 from pages.web.admin_modules_page import AdminModulesPage
 
 
 @pytest.fixture
-def admin_modules(web_page):
-    email = os.getenv("LMS_EMAIL")
-    password = os.getenv("LMS_PASSWORD")
-    if not email or not password:
-        pytest.skip("Set LMS_EMAIL and LMS_PASSWORD to run admin module tests.")
-
-    modules = AdminModulesPage(web_page)
+def admin_modules(authenticated_web_page):
+    modules = AdminModulesPage(authenticated_web_page)
     modules.load()
-    modules.login(email, password)
-    modules.wait_until_url_contains("/dashboard", timeout=60)
-    modules.present("body")
+    modules.wait_for_dashboard()
     return modules
 
 

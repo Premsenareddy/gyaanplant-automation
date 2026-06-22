@@ -1,20 +1,12 @@
-import os
-
 import pytest
 
 from pages.web.colleges_page import CollegesPage
 
 
 @pytest.fixture
-def colleges_page(web_page):
-    email = os.getenv("LMS_EMAIL")
-    password = os.getenv("LMS_PASSWORD")
-    if not email or not password:
-        pytest.skip("Set LMS_EMAIL and LMS_PASSWORD to run Colleges tests.")
-
-    colleges = CollegesPage(web_page)
+def colleges_page(authenticated_web_page):
+    colleges = CollegesPage(authenticated_web_page)
     colleges.load()
-    colleges.login(email, password)
     colleges.wait_for_dashboard()
     colleges.open_colleges()
     return colleges
