@@ -79,6 +79,49 @@ Failed web tests save:
 - screenshots under `reports/web/screenshots`
 - Playwright traces under `reports/web/traces`
 
+## GitHub Actions CI
+
+The workflow at `.github/workflows/web-automation.yml` runs web automation remotely.
+
+- Pull requests to `main`: runs smoke tests.
+- Pushes to `main`: runs smoke tests.
+- Manual `workflow_dispatch`: choose `smoke`, `regression`, `rbac`, or `crud`.
+
+Configure these GitHub repository secrets before expecting authenticated suites to run:
+
+```bash
+LMS_BASE_URL
+LMS_EMAIL
+LMS_PASSWORD
+```
+
+Optional RBAC secrets:
+
+```bash
+LMS_ADMIN_EMAIL
+LMS_ADMIN_PASSWORD
+LMS_COLLEGE_ADMIN_EMAIL
+LMS_COLLEGE_ADMIN_PASSWORD
+LMS_STUDENT_EMAIL
+LMS_STUDENT_PASSWORD
+LMS_STUDENT_SECONDARY_EMAIL
+LMS_STUDENT_SECONDARY_PASSWORD
+LMS_TPO_EMAIL
+LMS_TPO_PASSWORD
+LMS_HOD_EMAIL
+LMS_HOD_PASSWORD
+LMS_MENTOR_EMAIL
+LMS_MENTOR_PASSWORD
+```
+
+CI uploads the HTML report, screenshots, and Playwright traces as workflow artifacts.
+
+Run CRUD manually only after confirming live test data cleanup is acceptable:
+
+```bash
+pytest -m "web and crud" --run-live-crud
+```
+
 ## Useful Environment Variables
 
 ```bash
