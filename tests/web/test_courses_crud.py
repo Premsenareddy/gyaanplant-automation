@@ -1,21 +1,13 @@
-import os
-
 import pytest
 
 from pages.web.courses_page import CoursesPage
 
 
 @pytest.fixture
-def courses_crud_context(web_page):
-    email = os.getenv("LMS_EMAIL")
-    password = os.getenv("LMS_PASSWORD")
-    if not email or not password:
-        pytest.skip("Set LMS_EMAIL and LMS_PASSWORD to run Courses CRUD tests.")
-
-    courses = CoursesPage(web_page)
+def courses_crud_context(authenticated_web_page):
+    courses = CoursesPage(authenticated_web_page)
     courses.load()
-    courses.login(email, password)
-    courses.wait_until_url_contains("/dashboard", timeout=60)
+    courses.wait_for_dashboard()
     courses.navigate_to()
     return courses
 

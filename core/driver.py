@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 from config.settings import WebConfig
 
 
-def create_web_page():
+def create_web_page(storage_state: str | None = None):
     config = WebConfig()
     playwright = sync_playwright().start()
 
@@ -26,6 +26,8 @@ def create_web_page():
                 "height": config.viewport_height,
             },
         }
+        if storage_state:
+            context_options["storage_state"] = storage_state
         if config.record_video:
             context_options["record_video_dir"] = str(
                 Path(config.artifacts_dir) / "videos"

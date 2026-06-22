@@ -1,21 +1,13 @@
-import os
-
 import pytest
 
 from pages.web.organizations_page import OrganizationsPage
 
 
 @pytest.fixture
-def organizations_page(web_page):
-    email = os.getenv("LMS_EMAIL")
-    password = os.getenv("LMS_PASSWORD")
-    if not email or not password:
-        pytest.skip("Set LMS_EMAIL and LMS_PASSWORD to run Organizations tests.")
-
-    organizations = OrganizationsPage(web_page)
+def organizations_page(authenticated_web_page):
+    organizations = OrganizationsPage(authenticated_web_page)
     organizations.load()
-    organizations.login(email, password)
-    organizations.wait_until_url_contains("/dashboard", timeout=60)
+    organizations.wait_for_dashboard()
     organizations.navigate_to()
     return organizations
 

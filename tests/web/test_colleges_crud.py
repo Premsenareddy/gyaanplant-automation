@@ -1,24 +1,21 @@
-import os
-
 import pytest
 
 from pages.web.colleges_page import CollegesPage
+from utils.web_api_client import WebApiClient
 
 
 @pytest.fixture
-def colleges_crud_context(web_page):
-    email = os.getenv("LMS_EMAIL")
-    password = os.getenv("LMS_PASSWORD")
-    if not email or not password:
-        pytest.skip("Set LMS_EMAIL and LMS_PASSWORD to run Colleges CRUD tests.")
-
-    colleges = CollegesPage(web_page)
+def colleges_crud_context(authenticated_web_page):
+    colleges = CollegesPage(authenticated_web_page)
     colleges.load()
-    colleges.login(email, password)
     colleges.wait_for_dashboard()
 
     created_colleges = []
     yield colleges, created_colleges
+
+    api_cleanup = WebApiClient().cleanup_by_prefix("colleges", prefix=CollegesPage.AUTOMATION_PREFIX)
+    if api_cleanup.enabled:
+        print(f"\n[API Cleanup] Colleges status={api_cleanup.status_code}")
 
     for college_name in list(created_colleges):
         try:
@@ -35,6 +32,7 @@ def test_gp_col_crud_001_create_read_update_delete_college(colleges_crud_context
     created_colleges.append(college_data.name)
 
     colleges.navigate_to()
+    WebApiClient().cleanup_by_prefix("colleges", prefix=CollegesPage.AUTOMATION_PREFIX)
     colleges.delete_college_if_present(college_data.name)
 
     colleges.create_college_from_data(college_data)
